@@ -207,3 +207,28 @@ round,loss,accuracy
 2,0.3841,0.8875
 3,0.2215,0.9500
 ```
+
+---
+
+## 9. Interactive Web Dashboard (Streamlit)
+
+FedMed includes an interactive clinical web dashboard for visualization of federated learning metrics, convergence trajectories, non-IID client partitions, and model artifact inspection.
+
+### Launching the Dashboard:
+```powershell
+# Windows
+.\.venv\Scripts\streamlit.exe run dashboard.py
+
+# Linux / macOS
+streamlit run dashboard.py
+```
+Default local access URL: **`http://localhost:8501`**
+
+### Dashboard Capabilities:
+- **Clinical Header & Theme**: Medical UI design highlighting zero patient data transfer and privacy guarantees.
+- **KPI Metrics Cards**: Displays completed federated rounds, final global accuracy (%), final cross-entropy loss, and active hospital client count.
+- **Dual Convergence Plots**: Side-by-side high-resolution plots for global accuracy progression and loss minimization.
+- **Full History Table**: Clean formatted tabular log with status badges.
+- **Non-IID Partition Explorer**: Inspects Client 0 (Focal Core lesion skew) and Client 1 (Peripheral Ring lesion skew).
+- **Model Registry & Audit Logs**: Verifies `results/final_model.pt` PyTorch state dict integrity and provides tabbed inspection of server and client logs.
+
