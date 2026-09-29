@@ -1,0 +1,7 @@
+{
+  "split": "val",
+  "count": 1,
+  "patient_ids": [
+    "BraTS20_Training_005"
+  ]
+}

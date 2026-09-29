@@ -1,0 +1,24 @@
+# Virtual Environment
+venv/
+env/
+ENV/
+.env
+
+# Python Bytecode & Cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# Large MRI volumes (Keep folder structures & manifests, ignore multi-hundred MB binaries)
+data/raw/BraTS*
+data/raw/imagesTr/
+data/raw/labelsTr/
+data/processed/*.npz
+
+# OS and Editor metadata
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

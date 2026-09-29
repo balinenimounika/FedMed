@@ -1,0 +1,11 @@
+# Core PyTorch for 3D tensor processing and DataLoader
+torch>=2.0.0
+
+# Medical Imaging & Array Operations (Python 3.12 compatible prebuilt wheels)
+nibabel>=5.1.0
+numpy>=1.26.0,<2.0.0
+scipy>=1.11.0
+
+# Visualization and Progress Tracking
+matplotlib>=3.8.0
+tqdm>=4.66.0

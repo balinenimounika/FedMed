@@ -1,0 +1,10 @@
+{
+  "split": "train",
+  "count": 4,
+  "patient_ids": [
+    "BraTS20_Training_001",
+    "BraTS20_Training_002",
+    "BraTS20_Training_003",
+    "BraTS20_Training_006"
+  ]
+}
