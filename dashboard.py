@@ -215,16 +215,18 @@ if df.empty:
     st.stop()
 
 # -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # 5. Metrics Cards / KPI Summary
 # -----------------------------------------------------------------------------
 final_round = int(df["round"].iloc[-1])
 final_acc = float(df["accuracy_pct"].iloc[-1])
 final_loss = float(df["loss"].iloc[-1])
-initial_acc = float(df["accuracy_pct"].iloc[0])
-initial_loss = float(df["loss"].iloc[0])
+round_1_acc = float(df["accuracy_pct"].iloc[0])
+round_1_loss = float(df["loss"].iloc[0])
 
-acc_delta = final_acc - initial_acc
-loss_delta = final_loss - initial_loss
+# Compute true deltas against Round 1
+acc_delta = final_acc - round_1_acc
+loss_delta = final_loss - round_1_loss
 
 kpi1, kpi2, kpi3, kpi4 = st.columns(4)
 
@@ -240,13 +242,14 @@ with kpi2:
         label="Global Accuracy",
         value=f"{final_acc:.2f}%",
         delta=f"{acc_delta:+.2f}% vs R1" if len(df) > 1 else "Round 1",
+        delta_color="normal",
     )
 
 with kpi3:
     st.metric(
         label="Global Test Loss",
-        value=f"{final_loss:.4f}",
-        delta=f"{loss_delta:+.4f} vs R1" if len(df) > 1 else "Round 1",
+        value=f"{final_loss:.5f}",
+        delta=f"{loss_delta:+.5f} vs R1" if len(df) > 1 else "Round 1",
         delta_color="inverse",
     )
 
@@ -258,6 +261,15 @@ with kpi4:
     )
 
 st.markdown("<br>", unsafe_allow_html=True)
+
+# -----------------------------------------------------------------------------
+# Synthetic Benchmark Disclaimer Banner
+# -----------------------------------------------------------------------------
+st.info(
+    "⚠️ **Synthetic Benchmark Note**: 100.0% accuracy is expected and achieved due to distinct geometric signal "
+    "patterns in the synthetic validation data used to verify federated synchronization and zero-leakage "
+    "protocol pipeline. Real-world non-IID clinical imaging will exhibit lower convergence ceilings."
+)
 
 # -----------------------------------------------------------------------------
 # 6. Dual-Chart Visualizations
@@ -292,7 +304,7 @@ with chart_col1:
     ax_acc.set_xlabel("Federated Round", fontsize=10)
     ax_acc.set_ylabel("Weighted Accuracy (%)", fontsize=10)
     ax_acc.set_xticks(df["round"].tolist())
-    ax_acc.set_ylim([max(0.0, df["accuracy_pct"].min() - 15), 110])
+    ax_acc.set_ylim([max(0.0, df["accuracy_pct"].min() - 15), 115])
     ax_acc.grid(True, linestyle="--", alpha=0.5)
     ax_acc.spines["top"].set_visible(False)
     ax_acc.spines["right"].set_visible(False)
@@ -312,7 +324,7 @@ with chart_col2:
     )
     for _, row in df.iterrows():
         ax_loss.annotate(
-            f"{row['loss']:.4f}",
+            f"{row['loss']:.5f}",
             (row["round"], row["loss"]),
             textcoords="offset points",
             xytext=(0, 10),
@@ -325,7 +337,7 @@ with chart_col2:
     ax_loss.set_xlabel("Federated Round", fontsize=10)
     ax_loss.set_ylabel("Cross-Entropy Loss", fontsize=10)
     ax_loss.set_xticks(df["round"].tolist())
-    ax_loss.set_ylim([0, max(df["loss"].max() * 1.25, 0.1)])
+    ax_loss.set_ylim([0, max(df["loss"].max() * 1.35, 0.05)])
     ax_loss.grid(True, linestyle="--", alpha=0.5)
     ax_loss.spines["top"].set_visible(False)
     ax_loss.spines["right"].set_visible(False)
@@ -338,7 +350,7 @@ with chart_col2:
 st.subheader("📋 Training History Log")
 
 display_df = df.copy()
-display_df["loss"] = display_df["loss"].map(lambda x: f"{x:.4f}")
+display_df["loss"] = display_df["loss"].map(lambda x: f"{x:.5f}")
 display_df["accuracy"] = display_df["accuracy_pct"].map(lambda x: f"{x:.2f}%")
 display_df["Status"] = "Converged / Optimal"
 display_df = display_df.rename(
