@@ -313,13 +313,16 @@ with chart_col1:
 
 with chart_col2:
     fig_loss, ax_loss = plt.subplots(figsize=(6, 4))
+    # Explicit red line and markers (#FF4B4B) mapping the 3-round loss descent
     ax_loss.plot(
         df["round"],
         df["loss"],
-        color="#e11d48",
-        marker="s",
+        color="#FF4B4B",
+        marker="o",
         linewidth=2.5,
         markersize=8,
+        markerfacecolor="#FF4B4B",
+        markeredgecolor="#B91C1C",
         label="Aggregated Loss",
     )
     for _, row in df.iterrows():
@@ -331,7 +334,7 @@ with chart_col2:
             ha="center",
             fontsize=9,
             fontweight="bold",
-            color="#be123c",
+            color="#B91C1C",
         )
     ax_loss.set_title("Aggregated Global Loss Across Rounds", fontsize=11, fontweight="bold", pad=12)
     ax_loss.set_xlabel("Federated Round", fontsize=10)

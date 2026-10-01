@@ -94,7 +94,7 @@ class FedMedClient(fl.client.NumPyClient):
 
         loss, accuracy = test(self.model, self.test_loader, device=self.device)
         print(
-            f"[Client {self.client_id}] Evaluation (Round {server_round}) - Test Loss: {loss:.4f}, Test Accuracy: {accuracy:.4f}",
+            f"[Client {self.client_id}] Evaluation (Round {server_round}) - Test Loss: {loss:.5f}, Test Accuracy: {accuracy * 100:.2f}%",
             flush=True,
         )
 
