@@ -2,6 +2,7 @@
 
 import argparse
 import sys
+import time
 from pathlib import Path
 from typing import Dict, List, Tuple
 
@@ -55,6 +56,7 @@ class FedMedClient(fl.client.NumPyClient):
         server_round = config.get("server_round", "?")
         epochs = int(config.get("local_epochs", LOCAL_EPOCHS))
 
+        start_time = time.perf_counter()
         print(
             f"\n[Client {self.client_id}] Starting Local Training (Round {server_round}, {epochs} epochs)...",
             flush=True,
@@ -65,16 +67,23 @@ class FedMedClient(fl.client.NumPyClient):
             epochs=epochs,
             device=self.device,
             learning_rate=LEARNING_RATE,
+            client_id=self.client_id,
+            verbose=True,
         )
+        duration_sec = time.perf_counter() - start_time
         print(
-            f"[Client {self.client_id}] Completed Training - Local Loss: {loss:.4f}, Local Accuracy: {accuracy:.4f}",
+            f"[Client {self.client_id}] Completed Training ({duration_sec:.2f}s) - Final Loss: {loss:.5f}, Final Accuracy: {accuracy * 100:.2f}%",
             flush=True,
         )
 
         return (
             get_parameters(self.model),
             len(self.train_loader.dataset),
-            {"loss": float(loss), "accuracy": float(accuracy)},
+            {
+                "loss": float(loss),
+                "accuracy": float(accuracy),
+                "latency_sec": round(float(duration_sec), 3),
+            },
         )
 
     def evaluate(

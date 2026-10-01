@@ -41,12 +41,13 @@ def evaluate_metrics_aggregation_fn(
 
 
 class FedMedStrategy(fl.server.strategy.FedAvg):
-    """Custom FedAvg strategy tracking parameters and saving history."""
+    """Custom FedAvg strategy tracking parameters, latencies, and saving history."""
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.latest_parameters: Optional[Parameters] = None
         self.history: List[Dict[str, Union[int, float]]] = []
+        self.round_latencies: Dict[int, float] = {}
 
     def aggregate_fit(
         self,
@@ -57,6 +58,16 @@ class FedMedStrategy(fl.server.strategy.FedAvg):
         parameters, metrics = super().aggregate_fit(server_round, results, failures)
         if parameters is not None:
             self.latest_parameters = parameters
+
+        # Aggregate reported client training latencies
+        latencies = [
+            float(res.metrics["latency_sec"])
+            for _, res in results
+            if res.metrics and "latency_sec" in res.metrics
+        ]
+        if latencies:
+            self.round_latencies[server_round] = float(sum(latencies) / len(latencies))
+
         return parameters, metrics
 
     def aggregate_evaluate(
@@ -69,17 +80,20 @@ class FedMedStrategy(fl.server.strategy.FedAvg):
 
         acc = metrics_aggregated.get("accuracy", 0.0) if metrics_aggregated else 0.0
         loss_val = float(loss_aggregated) if loss_aggregated is not None else 0.0
+        avg_lat = self.round_latencies.get(server_round, 0.0)
 
         record = {
             "round": server_round,
             "loss": loss_val,
             "accuracy": float(acc),
+            "latency_sec": round(avg_lat, 3),
         }
         self.history.append(record)
 
+        lat_str = f" | Avg Client Latency: {avg_lat:.2f}s" if avg_lat > 0 else ""
         print(
             f"\n>>> [Server Round {server_round} Aggregated Evaluation] "
-            f"Loss: {loss_val:.4f} | Weighted Accuracy: {acc:.4%}\n",
+            f"Loss: {loss_val:.5f} | Weighted Accuracy: {acc:.4%}{lat_str}\n",
             flush=True,
         )
 
@@ -170,8 +184,9 @@ def main() -> None:
         print(f"[Server] Saved initial model to: {FINAL_MODEL_PATH}", flush=True)
 
     # 2. Save training history CSV
+    fieldnames = ["round", "loss", "accuracy", "latency_sec"]
     with open(TRAINING_HISTORY_PATH, mode="w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=["round", "loss", "accuracy"])
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
         for row in strategy.history:
             writer.writerow(row)
@@ -179,14 +194,15 @@ def main() -> None:
 
     # Print summary table
     print("\n--- FedMed Round Summary ---", flush=True)
-    print(f"{'Round':<8}{'Aggregated Loss':<18}{'Aggregated Accuracy':<20}", flush=True)
-    print("-" * 46, flush=True)
+    print(f"{'Round':<8}{'Aggregated Loss':<18}{'Aggregated Accuracy':<22}{'Avg Latency':<14}", flush=True)
+    print("-" * 62, flush=True)
     for row in strategy.history:
+        lat = f"{row.get('latency_sec', 0.0):.2f}s"
         print(
-            f"{row['round']:<8}{row['loss']:<18.4f}{row['accuracy'] * 100:>17.2f}%",
+            f"{row['round']:<8}{row['loss']:<18.5f}{row['accuracy'] * 100:>17.2f}%   {lat:<14}",
             flush=True,
         )
-    print("-" * 46, flush=True)
+    print("-" * 62, flush=True)
 
 
 if __name__ == "__main__":

@@ -1,7 +1,7 @@
 """Lightweight PyTorch CNN model and helper routines for FedMed."""
 
 from collections import OrderedDict
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 import numpy as np
 import torch
 import torch.nn as nn
@@ -54,6 +54,8 @@ def train(
     epochs: int,
     device: torch.device = torch.device("cpu"),
     learning_rate: float = 0.001,
+    client_id: Optional[int] = None,
+    verbose: bool = True,
 ) -> Tuple[float, float]:
     """Train the model for a given number of epochs on the specified device.
     
@@ -68,7 +70,7 @@ def train(
     epoch_loss = 0.0
     epoch_acc = 0.0
 
-    for _ in range(epochs):
+    for epoch_idx in range(1, epochs + 1):
         running_loss = 0.0
         correct = 0
         total = 0
@@ -88,6 +90,13 @@ def train(
 
         epoch_loss = running_loss / total if total > 0 else 0.0
         epoch_acc = correct / total if total > 0 else 0.0
+
+        if verbose:
+            prefix = f"[Client {client_id}] " if client_id is not None else ""
+            print(
+                f"  {prefix}Local Epoch {epoch_idx}/{epochs} - Loss: {epoch_loss:.5f}, Acc: {epoch_acc * 100:.2f}%",
+                flush=True,
+            )
 
     return epoch_loss, epoch_acc
 
