@@ -420,6 +420,3 @@ To transition this prototype into a HIPAA / GDPR-compliant clinical environment,
 
 ---
 
-## 11. License
-
-This project is licensed under the MIT License. See `LICENSE` for details.
