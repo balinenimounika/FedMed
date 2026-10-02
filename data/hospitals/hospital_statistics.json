@@ -1,0 +1,121 @@
+{
+  "total_hospitals": 3,
+  "total_patients": 6,
+  "overall_percentage": 100.0,
+  "hospitals": {
+    "hospital_1": {
+      "hospital_id": 1,
+      "hospital_name": "Hospital 1",
+      "patients": [
+        "BraTS20_Training_001",
+        "BraTS20_Training_002"
+      ],
+      "patient_count": 2,
+      "percentage": 33.33,
+      "mri_volume_count": 2,
+      "segmentation_mask_count": 2,
+      "image_tensor_shape": [
+        4,
+        128,
+        128,
+        128
+      ],
+      "mask_tensor_shape": [
+        128,
+        128,
+        128
+      ],
+      "image_dtype": "float32",
+      "mask_dtype": "int64",
+      "segmentation_classes": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "min_intensity": -5.1572,
+      "max_intensity": 6.2631,
+      "mean_intensity": -0.0,
+      "std_intensity": 1.0,
+      "nonzero_voxels": 7629436,
+      "has_nan": false,
+      "has_inf": false
+    },
+    "hospital_2": {
+      "hospital_id": 2,
+      "hospital_name": "Hospital 2",
+      "patients": [
+        "BraTS20_Training_003",
+        "BraTS20_Training_004"
+      ],
+      "patient_count": 2,
+      "percentage": 33.33,
+      "mri_volume_count": 2,
+      "segmentation_mask_count": 2,
+      "image_tensor_shape": [
+        4,
+        128,
+        128,
+        128
+      ],
+      "mask_tensor_shape": [
+        128,
+        128,
+        128
+      ],
+      "image_dtype": "float32",
+      "mask_dtype": "int64",
+      "segmentation_classes": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "min_intensity": -5.0574,
+      "max_intensity": 6.3003,
+      "mean_intensity": 0.0,
+      "std_intensity": 1.0,
+      "nonzero_voxels": 7629440,
+      "has_nan": false,
+      "has_inf": false
+    },
+    "hospital_3": {
+      "hospital_id": 3,
+      "hospital_name": "Hospital 3",
+      "patients": [
+        "BraTS20_Training_005",
+        "BraTS20_Training_006"
+      ],
+      "patient_count": 2,
+      "percentage": 33.33,
+      "mri_volume_count": 2,
+      "segmentation_mask_count": 2,
+      "image_tensor_shape": [
+        4,
+        128,
+        128,
+        128
+      ],
+      "mask_tensor_shape": [
+        128,
+        128,
+        128
+      ],
+      "image_dtype": "float32",
+      "mask_dtype": "int64",
+      "segmentation_classes": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "min_intensity": -5.0622,
+      "max_intensity": 6.3315,
+      "mean_intensity": 0.0,
+      "std_intensity": 1.0,
+      "nonzero_voxels": 7629440,
+      "has_nan": false,
+      "has_inf": false
+    }
+  }
+}

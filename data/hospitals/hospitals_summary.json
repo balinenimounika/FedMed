@@ -1,0 +1,18 @@
+{
+  "num_hospitals": 3,
+  "total_patients": 6,
+  "distribution": {
+    "hospital_1": [
+      "BraTS20_Training_001",
+      "BraTS20_Training_002"
+    ],
+    "hospital_2": [
+      "BraTS20_Training_003",
+      "BraTS20_Training_004"
+    ],
+    "hospital_3": [
+      "BraTS20_Training_005",
+      "BraTS20_Training_006"
+    ]
+  }
+}

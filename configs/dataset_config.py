@@ -18,7 +18,12 @@ class DatasetConfig:
     raw_data_dir: Path = BASE_DIR / "data" / "raw"
     processed_data_dir: Path = BASE_DIR / "data" / "processed"
     splits_dir: Path = BASE_DIR / "data" / "splits"
+    hospitals_dir: Path = BASE_DIR / "data" / "hospitals"
     visualizations_dir: Path = BASE_DIR / "data" / "visualizations"
+    reports_dir: Path = BASE_DIR / "reports"
+    
+    # Federated Learning Hospital Simulation
+    num_hospitals: int = 3
     
     # Supported modalities (BraTS standard)
     modalities: List[str] = field(default_factory=lambda: ["flair", "t1", "t1ce", "t2"])

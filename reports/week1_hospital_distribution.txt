@@ -1,0 +1,57 @@
+=======================================================
+ FedMed: Week-1 Hospital Data Distribution Report
+ Cross-Silo Federated Learning Simulation (3 Hospitals)
+=======================================================
+
+Hospital 1:
+    Patients:             2 (['BraTS20_Training_001', 'BraTS20_Training_002'])
+    Percentage:           33.33%
+    MRI Volume Count:     2
+    Mask Count:           2
+    Image Tensor Shape:   [4, 128, 128, 128] (float32)
+    Mask Tensor Shape:    [128, 128, 128] (int64)
+    Segmentation Classes: [0, 1, 2, 3]
+    Min Intensity:        -5.1572
+    Max Intensity:        6.2631
+    Mean Intensity:       -0.0
+    Std Intensity:        1.0
+    Non-Zero Voxels:      7629436
+    NaN/Inf Check:        CLEAN (No NaN/Inf)
+
+Hospital 2:
+    Patients:             2 (['BraTS20_Training_003', 'BraTS20_Training_004'])
+    Percentage:           33.33%
+    MRI Volume Count:     2
+    Mask Count:           2
+    Image Tensor Shape:   [4, 128, 128, 128] (float32)
+    Mask Tensor Shape:    [128, 128, 128] (int64)
+    Segmentation Classes: [0, 1, 2, 3]
+    Min Intensity:        -5.0574
+    Max Intensity:        6.3003
+    Mean Intensity:       0.0
+    Std Intensity:        1.0
+    Non-Zero Voxels:      7629440
+    NaN/Inf Check:        CLEAN (No NaN/Inf)
+
+Hospital 3:
+    Patients:             2 (['BraTS20_Training_005', 'BraTS20_Training_006'])
+    Percentage:           33.33%
+    MRI Volume Count:     2
+    Mask Count:           2
+    Image Tensor Shape:   [4, 128, 128, 128] (float32)
+    Mask Tensor Shape:    [128, 128, 128] (int64)
+    Segmentation Classes: [0, 1, 2, 3]
+    Min Intensity:        -5.0622
+    Max Intensity:        6.3315
+    Mean Intensity:       0.0
+    Std Intensity:        1.0
+    Non-Zero Voxels:      7629440
+    NaN/Inf Check:        CLEAN (No NaN/Inf)
+
+-------------------------------------------------------
+Total Summary:
+    Total Hospitals:      3
+    Total Patients:       6
+    Total Percentage:     100.0%
+    Patient Isolation:    LEAK-FREE (No cross-hospital overlap)
+=======================================================

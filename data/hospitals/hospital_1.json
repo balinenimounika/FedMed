@@ -1,0 +1,9 @@
+{
+  "hospital_id": 1,
+  "hospital_name": "Hospital 1",
+  "patient_count": 2,
+  "patient_ids": [
+    "BraTS20_Training_001",
+    "BraTS20_Training_002"
+  ]
+}

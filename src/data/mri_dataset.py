@@ -30,15 +30,24 @@ class MRIDataset(Dataset):
         self,
         patient_ids: Optional[List[str]] = None,
         split: Optional[str] = None,
+        hospital_id: Optional[int] = None,
         config: DatasetConfig = DEFAULT_CONFIG
     ):
         self.config = config
         self.processed_dir = Path(config.processed_data_dir)
         self.splits_dir = Path(config.splits_dir)
+        self.hospitals_dir = Path(config.hospitals_dir)
 
         # Determine patient IDs
         if patient_ids is not None:
             self.patient_ids = sorted(patient_ids)
+        elif hospital_id is not None:
+            hosp_file = self.hospitals_dir / f"hospital_{hospital_id}.json"
+            if not hosp_file.exists():
+                raise FileNotFoundError(f"Hospital manifest not found: {hosp_file}. Run hospital partitioning first.")
+            with open(hosp_file, "r", encoding="utf-8") as f:
+                manifest = json.load(f)
+                self.patient_ids = manifest["patient_ids"]
         elif split is not None:
             split_file = self.splits_dir / f"{split}.json"
             if not split_file.exists():
@@ -101,3 +110,25 @@ def get_dataloader(
         pin_memory=torch.cuda.is_available()
     )
     return loader
+
+
+def get_hospital_dataloader(
+    hospital_id: int,
+    batch_size: int = 1,
+    shuffle: bool = False,
+    num_workers: int = 0,
+    config: DatasetConfig = DEFAULT_CONFIG
+) -> DataLoader:
+    """
+    Convenience factory to create a DataLoader for a specific hospital (1, 2, or 3).
+    Loads only the patients assigned to that hospital.
+    """
+    dataset = MRIDataset(hospital_id=hospital_id, config=config)
+    return DataLoader(
+        dataset,
+        batch_size=batch_size,
+        shuffle=shuffle,
+        num_workers=num_workers,
+        pin_memory=torch.cuda.is_available()
+    )
+
