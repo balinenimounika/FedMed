@@ -1,6 +1,6 @@
 # FedMed Federated Learning Simulation Runner for Windows PowerShell
 param(
-    [string]$PythonExe = ""
+    [string]$PythonPath = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -14,11 +14,11 @@ Write-Host "==========================================================" -Foregro
 
 # 1. Activate .venv if available
 $pythonExe = "python"
-if ($PythonExe) {
-    if (-not (Test-Path $PythonExe)) {
-        throw "The supplied Python executable does not exist: $PythonExe"
+if ($PythonPath) {
+    if (-not (Test-Path $PythonPath)) {
+        throw "The supplied Python executable does not exist: $PythonPath"
     }
-    $pythonExe = $PythonExe
+    $pythonExe = $PythonPath
     Write-Host "[Env] Using supplied Python: $pythonExe" -ForegroundColor Green
 } elseif (Test-Path "$scriptDir\.venv\Scripts\python.exe") {
     $pythonExe = "$scriptDir\.venv\Scripts\python.exe"
