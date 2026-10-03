@@ -16,7 +16,7 @@ LOGS_DIR.mkdir(parents=True, exist_ok=True)
 SERVER_ADDRESS: str = "127.0.0.1:8080"
 
 # Federated Learning Configuration
-NUM_CLIENTS: int = 2
+NUM_CLIENTS: int = 3
 NUM_ROUNDS: int = 3
 LOCAL_EPOCHS: int = 2
 
@@ -32,11 +32,13 @@ DATASET_SIZE_PER_CLIENT: int = 200
 TRAIN_SPLIT: float = 0.8
 
 # Non-IID Partitioning Ratios:
-# Client 0: 80% Class 0, 20% Class 1
-# Client 1: 20% Class 0, 80% Class 1
+# Client 0 (Hospital A): 80% Class 0, 20% Class 1 (Focal lesion center)
+# Client 1 (Hospital B): 20% Class 0, 80% Class 1 (Peripheral rim center)
+# Client 2 (Hospital C): 50% Class 0, 50% Class 1 (General community center)
 CLIENT_CLASS_DISTRIBUTIONS = {
     0: {0: 0.80, 1: 0.20},
     1: {0: 0.20, 1: 0.80},
+    2: {0: 0.50, 1: 0.50},
 }
 
 # Output Files

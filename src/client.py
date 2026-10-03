@@ -111,8 +111,8 @@ def main() -> None:
         "--client-id",
         type=int,
         required=True,
-        choices=[0, 1],
-        help="Client identifier (0 or 1)",
+        choices=[0, 1, 2],
+        help="Client identifier (0, 1, or 2)",
     )
     parser.add_argument(
         "--server-address",

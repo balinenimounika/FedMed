@@ -24,8 +24,9 @@ mkdir -p "$SCRIPT_DIR/results"
 SERVER_LOG="$SCRIPT_DIR/logs/server.log"
 CLIENT0_LOG="$SCRIPT_DIR/logs/client_0.log"
 CLIENT1_LOG="$SCRIPT_DIR/logs/client_1.log"
+CLIENT2_LOG="$SCRIPT_DIR/logs/client_2.log"
 
-rm -f "$SERVER_LOG" "$CLIENT0_LOG" "$CLIENT1_LOG"
+rm -f "$SERVER_LOG" "$CLIENT0_LOG" "$CLIENT1_LOG" "$CLIENT2_LOG"
 
 # Trap SIGINT and SIGTERM to kill spawned background jobs
 cleanup() {
@@ -33,6 +34,7 @@ cleanup() {
     [ -n "$SERVER_PID" ] && kill -9 "$SERVER_PID" 2>/dev/null || true
     [ -n "$CLIENT0_PID" ] && kill -9 "$CLIENT0_PID" 2>/dev/null || true
     [ -n "$CLIENT1_PID" ] && kill -9 "$CLIENT1_PID" 2>/dev/null || true
+    [ -n "$CLIENT2_PID" ] && kill -9 "$CLIENT2_PID" 2>/dev/null || true
     exit 1
 }
 trap cleanup SIGINT SIGTERM
@@ -70,12 +72,15 @@ fi
 
 echo "[Server] FedMed Server is live and ready."
 
-echo "[3/4] Launching Client 0 and Client 1..."
+echo "[3/4] Launching Client 0, Client 1, and Client 2..."
 "$PYTHON_CMD" -u src/client.py --client-id 0 > "$CLIENT0_LOG" 2>&1 &
 CLIENT0_PID=$!
 
 "$PYTHON_CMD" -u src/client.py --client-id 1 > "$CLIENT1_LOG" 2>&1 &
 CLIENT1_PID=$!
+
+"$PYTHON_CMD" -u src/client.py --client-id 2 > "$CLIENT2_LOG" 2>&1 &
+CLIENT2_PID=$!
 
 echo "[4/4] Simulation running. Waiting for 3 rounds to complete..."
 
@@ -88,6 +93,9 @@ CLIENT0_STATUS=$?
 wait "$CLIENT1_PID"
 CLIENT1_STATUS=$?
 
+wait "$CLIENT2_PID"
+CLIENT2_STATUS=$?
+
 echo ""
 echo "=========================================================="
 echo "  Simulation Completed. Process Exit Statuses:           "
@@ -95,9 +103,10 @@ echo "=========================================================="
 echo "Server Exit Code  : $SERVER_STATUS"
 echo "Client 0 Exit Code: $CLIENT0_STATUS"
 echo "Client 1 Exit Code: $CLIENT1_STATUS"
+echo "Client 2 Exit Code: $CLIENT2_STATUS"
 
-if [ $SERVER_STATUS -eq 0 ] && [ $CLIENT0_STATUS -eq 0 ] && [ $CLIENT1_STATUS -eq 0 ]; then
-    echo -e "\n[SUCCESS] Federated learning completed successfully!"
+if [ $SERVER_STATUS -eq 0 ] && [ $CLIENT0_STATUS -eq 0 ] && [ $CLIENT1_STATUS -eq 0 ] && [ $CLIENT2_STATUS -eq 0 ]; then
+    echo -e "\n[SUCCESS] Federated learning completed successfully across 3 clients!"
     if [ -f "$SCRIPT_DIR/results/training_history.csv" ]; then
         echo -e "\nTraining History (results/training_history.csv):"
         cat "$SCRIPT_DIR/results/training_history.csv"
@@ -111,5 +120,7 @@ else
     cat "$CLIENT0_LOG"
     echo "--- Client 1 Log ---"
     cat "$CLIENT1_LOG"
+    echo "--- Client 2 Log ---"
+    cat "$CLIENT2_LOG"
     exit 1
 fi
