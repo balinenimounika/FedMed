@@ -1,3 +1,5 @@
+import os
+
 import flwr as fl
 
 
@@ -16,6 +18,8 @@ def weighted_average(metrics):
 
 
 def main():
+    num_rounds = int(os.getenv("FEDMED_ROUNDS", "1"))
+
     strategy = fl.server.strategy.FedAvg(
         min_fit_clients=1,
         min_evaluate_clients=1,
@@ -25,7 +29,7 @@ def main():
 
     fl.server.start_server(
         server_address="127.0.0.1:8080",
-        config=fl.server.ServerConfig(num_rounds=1),
+        config=fl.server.ServerConfig(num_rounds=num_rounds),
         strategy=strategy,
     )
 
