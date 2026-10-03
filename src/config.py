@@ -44,3 +44,15 @@ CLIENT_CLASS_DISTRIBUTIONS = {
 # Output Files
 FINAL_MODEL_PATH = RESULTS_DIR / "final_model.pt"
 TRAINING_HISTORY_PATH = RESULTS_DIR / "training_history.csv"
+
+# Week 6: 3D MRI segmentation integration. The compact volume and channel
+# configuration makes a hospital-side smoke test feasible on CPU while keeping
+# a compatible MONAI U-Net topology for Flower parameter exchange.
+MRI_VOLUME_DIMS: tuple = (16, 16, 16)  # (Depth, Height, Width)
+MRI_IN_CHANNELS: int = 1
+MRI_OUT_CHANNELS: int = 2  # background, lesion
+MRI_UNET_CHANNELS: tuple = (4, 8, 16, 32)
+MRI_UNET_STRIDES: tuple = (2, 2, 2)
+MRI_DATASET_SIZE_PER_CLIENT: int = 8
+MRI_BATCH_SIZE: int = 1
+MRI_TRAINING_RESULTS_PATH = RESULTS_DIR / "week6_local_training_results.json"

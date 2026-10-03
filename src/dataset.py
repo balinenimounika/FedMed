@@ -17,6 +17,8 @@ from src.config import (
     IMAGE_DIMS,
     RANDOM_SEED,
     TRAIN_SPLIT,
+    MRI_DATASET_SIZE_PER_CLIENT,
+    MRI_VOLUME_DIMS,
 )
 
 
@@ -32,6 +34,20 @@ class SyntheticMedicalDataset(Dataset):
 
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
         return self.images[idx], self.labels[idx]
+
+
+class MRIVolumeDataset(Dataset):
+    """MRI volumes and voxel-wise lesion masks for 3D segmentation."""
+
+    def __init__(self, volumes: np.ndarray, masks: np.ndarray) -> None:
+        self.volumes = torch.from_numpy(volumes).float()
+        self.masks = torch.from_numpy(masks).long()
+
+    def __len__(self) -> int:
+        return len(self.masks)
+
+    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
+        return self.volumes[idx], self.masks[idx]
 
 
 def _create_sample_image(class_label: int, rng: np.random.Generator) -> np.ndarray:
@@ -140,3 +156,53 @@ def get_client_dataloaders(
     )
 
     return train_loader, test_loader
+
+
+def _create_mri_volume(client_id: int, rng: np.random.Generator) -> Tuple[np.ndarray, np.ndarray]:
+    """Create a deterministic MRI-like volume and binary lesion mask.
+
+    This is the development fallback until the prepared MRI files are mounted.
+    Its `(N, 1, D, H, W)` volumes and `(N, D, H, W)` masks are the exact
+    contract expected from the real preprocessing pipeline.
+    """
+    depth, height, width = MRI_VOLUME_DIMS
+    z, y, x = np.ogrid[-1:1:complex(depth), -1:1:complex(height), -1:1:complex(width)]
+    center_shift = -0.25 if client_id == 0 else 0.25
+    radius = 0.36 + rng.uniform(-0.04, 0.04)
+    lesion = ((x - center_shift) ** 2 + y**2 + z**2) <= radius**2
+    background = rng.normal(0.16, 0.035, size=MRI_VOLUME_DIMS)
+    lesion_intensity = rng.normal(0.68, 0.06, size=MRI_VOLUME_DIMS)
+    volume = np.where(lesion, lesion_intensity, background)
+    return np.clip(volume, 0.0, 1.0).astype(np.float32)[None, ...], lesion.astype(np.int64)
+
+
+def generate_client_mri_data(
+    client_id: int,
+    total_samples: int = MRI_DATASET_SIZE_PER_CLIENT,
+    seed: int = RANDOM_SEED,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Return synthetic fallback MRI volumes and masks for one hospital."""
+    rng = np.random.default_rng(seed + client_id * 1000)
+    pairs = [_create_mri_volume(client_id, rng) for _ in range(total_samples)]
+    volumes, masks = zip(*pairs)
+    return np.stack(volumes).astype(np.float32), np.stack(masks).astype(np.int64)
+
+
+def get_client_mri_dataloaders(
+    client_id: int,
+    batch_size: int = 1,
+    seed: int = RANDOM_SEED,
+    train_split: float = TRAIN_SPLIT,
+    total_samples: int = MRI_DATASET_SIZE_PER_CLIENT,
+) -> Tuple[DataLoader, DataLoader]:
+    """Create local hospital dataloaders for the 3D MRI segmentation model."""
+    volumes, masks = generate_client_mri_data(client_id, total_samples, seed)
+    dataset = MRIVolumeDataset(volumes, masks)
+    train_size = int(len(dataset) * train_split)
+    test_size = len(dataset) - train_size
+    split_gen = torch.Generator().manual_seed(seed + client_id)
+    train_dataset, test_dataset = random_split(dataset, [train_size, test_size], generator=split_gen)
+    return (
+        DataLoader(train_dataset, batch_size=batch_size, shuffle=True, generator=torch.Generator().manual_seed(seed + client_id)),
+        DataLoader(test_dataset, batch_size=batch_size, shuffle=False),
+    )

@@ -18,13 +18,19 @@ from src.config import (
     LOCAL_EPOCHS,
     RANDOM_SEED,
     SERVER_ADDRESS,
+    MRI_BATCH_SIZE,
+    MRI_IN_CHANNELS,
+    MRI_OUT_CHANNELS,
+    MRI_UNET_CHANNELS,
+    MRI_UNET_STRIDES,
 )
-from src.dataset import get_client_dataloaders
-from src.model import MedicalCNN, get_parameters, set_parameters, test, train
+from src.dataset import get_client_mri_dataloaders
+from src.fedmed.models import UNet3DConfig, build_unet3d
+from src.model import get_parameters, parameter_l1_norm, set_parameters, test, train
 
 
 class FedMedClient(fl.client.NumPyClient):
-    """NumPyClient that trains and evaluates MedicalCNN on local medical partitions."""
+    """Flower client that trains the shared MONAI 3D U-Net on local MRI data."""
 
     def __init__(
         self,
@@ -37,7 +43,14 @@ class FedMedClient(fl.client.NumPyClient):
         self.train_loader = train_loader
         self.test_loader = test_loader
         self.device = device
-        self.model = MedicalCNN().to(self.device)
+        self.model = build_unet3d(
+            UNet3DConfig(
+                in_channels=MRI_IN_CHANNELS,
+                out_channels=MRI_OUT_CHANNELS,
+                channels=MRI_UNET_CHANNELS,
+                strides=MRI_UNET_STRIDES,
+            )
+        ).to(self.device)
         print(
             f"[Client {self.client_id}] Initialized with {len(self.train_loader.dataset)} "
             f"training samples and {len(self.test_loader.dataset)} test samples on {self.device}.",
@@ -61,6 +74,7 @@ class FedMedClient(fl.client.NumPyClient):
             f"\n[Client {self.client_id}] Starting Local Training (Round {server_round}, {epochs} epochs)...",
             flush=True,
         )
+        weight_l1_before = parameter_l1_norm(self.model)
         loss, accuracy = train(
             self.model,
             self.train_loader,
@@ -71,6 +85,7 @@ class FedMedClient(fl.client.NumPyClient):
             verbose=True,
         )
         duration_sec = time.perf_counter() - start_time
+        weight_l1_after = parameter_l1_norm(self.model)
         print(
             f"[Client {self.client_id}] Completed Training ({duration_sec:.2f}s) - Final Loss: {loss:.5f}, Final Accuracy: {accuracy * 100:.2f}%",
             flush=True,
@@ -83,6 +98,9 @@ class FedMedClient(fl.client.NumPyClient):
                 "loss": float(loss),
                 "accuracy": float(accuracy),
                 "latency_sec": round(float(duration_sec), 3),
+                "weight_l1_before": weight_l1_before,
+                "weight_l1_after": weight_l1_after,
+                "weight_l1_change": weight_l1_after - weight_l1_before,
             },
         )
 
@@ -123,8 +141,8 @@ def main() -> None:
     parser.add_argument(
         "--batch-size",
         type=int,
-        default=BATCH_SIZE,
-        help=f"Batch size for DataLoader (default: {BATCH_SIZE})",
+        default=MRI_BATCH_SIZE,
+        help=f"3D MRI batch size (default: {MRI_BATCH_SIZE})",
     )
     args = parser.parse_args()
 
@@ -134,7 +152,7 @@ def main() -> None:
     print(f"  Target Server: {args.server_address}", flush=True)
     print(f"==================================================", flush=True)
 
-    train_loader, test_loader = get_client_dataloaders(
+    train_loader, test_loader = get_client_mri_dataloaders(
         client_id=args.client_id,
         batch_size=args.batch_size,
         seed=RANDOM_SEED,

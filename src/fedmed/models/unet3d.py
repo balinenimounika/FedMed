@@ -55,7 +55,7 @@ def build_unet3d(config: UNet3DConfig | None = None) -> UNet:
     """
     config = config or UNet3DConfig()
     config.validate()
-    return UNet(
+    model = UNet(
         spatial_dims=3,
         in_channels=config.in_channels,
         out_channels=config.out_channels,
@@ -68,3 +68,6 @@ def build_unet3d(config: UNet3DConfig | None = None) -> UNet:
         bias=config.bias,
         adn_ordering=config.adn_ordering,
     )
+    # Used by generic training utilities to select voxel-wise loss/metrics.
+    model.spatial_dims = 3  # type: ignore[attr-defined]
+    return model

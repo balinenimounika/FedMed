@@ -7,6 +7,8 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
+from monai.losses import DiceCELoss
+from monai.metrics import DiceMetric
 
 
 class MedicalCNN(nn.Module):
@@ -48,6 +50,15 @@ def set_parameters(model: nn.Module, parameters: List[np.ndarray]) -> None:
     model.load_state_dict(state_dict, strict=True)
 
 
+def parameter_l1_norm(model: nn.Module) -> float:
+    """Stable scalar fingerprint used to confirm local training changed weights."""
+    return float(sum(parameter.detach().abs().sum().item() for parameter in model.parameters()))
+
+
+def _is_segmentation_batch(outputs: torch.Tensor, labels: torch.Tensor) -> bool:
+    return outputs.ndim == 5 and labels.ndim == 4
+
+
 def train(
     model: nn.Module,
     train_loader: DataLoader,
@@ -64,7 +75,7 @@ def train(
     """
     model.to(device)
     model.train()
-    criterion = nn.CrossEntropyLoss()
+    criterion: nn.Module = DiceCELoss(to_onehot_y=True, softmax=True) if getattr(model, "spatial_dims", None) == 3 else nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
     epoch_loss = 0.0
@@ -79,13 +90,14 @@ def train(
             images, labels = images.to(device), labels.to(device)
             optimizer.zero_grad()
             outputs = model(images)
-            loss = criterion(outputs, labels)
+            segmentation = _is_segmentation_batch(outputs, labels)
+            loss = criterion(outputs, labels.unsqueeze(1) if segmentation else labels)
             loss.backward()
             optimizer.step()
 
             running_loss += loss.item() * images.size(0)
-            _, predicted = torch.max(outputs.data, 1)
-            total += labels.size(0)
+            predicted = torch.argmax(outputs, dim=1)
+            total += labels.numel() if segmentation else labels.size(0)
             correct += (predicted == labels).sum().item()
 
         epoch_loss = running_loss / total if total > 0 else 0.0
@@ -113,7 +125,7 @@ def test(
     """
     model.to(device)
     model.eval()
-    criterion = nn.CrossEntropyLoss()
+    criterion: nn.Module = DiceCELoss(to_onehot_y=True, softmax=True) if getattr(model, "spatial_dims", None) == 3 else nn.CrossEntropyLoss()
 
     running_loss = 0.0
     correct = 0
@@ -123,11 +135,12 @@ def test(
         for images, labels in test_loader:
             images, labels = images.to(device), labels.to(device)
             outputs = model(images)
-            loss = criterion(outputs, labels)
+            segmentation = _is_segmentation_batch(outputs, labels)
+            loss = criterion(outputs, labels.unsqueeze(1) if segmentation else labels)
 
             running_loss += loss.item() * images.size(0)
-            _, predicted = torch.max(outputs.data, 1)
-            total += labels.size(0)
+            predicted = torch.argmax(outputs, dim=1)
+            total += labels.numel() if segmentation else labels.size(0)
             correct += (predicted == labels).sum().item()
 
     loss = running_loss / total if total > 0 else 0.0

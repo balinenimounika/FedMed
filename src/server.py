@@ -22,7 +22,21 @@ from src.config import (
     SERVER_ADDRESS,
     TRAINING_HISTORY_PATH,
 )
-from src.model import MedicalCNN, get_parameters, set_parameters
+from src.config import MRI_IN_CHANNELS, MRI_OUT_CHANNELS, MRI_UNET_CHANNELS, MRI_UNET_STRIDES
+from src.fedmed.models import UNet3DConfig, build_unet3d
+from src.model import get_parameters, set_parameters
+
+
+def build_federated_model() -> torch.nn.Module:
+    """Construct the exact U-Net topology used by every hospital client."""
+    return build_unet3d(
+        UNet3DConfig(
+            in_channels=MRI_IN_CHANNELS,
+            out_channels=MRI_OUT_CHANNELS,
+            channels=MRI_UNET_CHANNELS,
+            strides=MRI_UNET_STRIDES,
+        )
+    )
 
 
 def evaluate_metrics_aggregation_fn(
@@ -139,7 +153,7 @@ def main() -> None:
     print("==================================================", flush=True)
 
     # Initialize global model
-    initial_model = MedicalCNN()
+    initial_model = build_federated_model()
     initial_parameters = ndarrays_to_parameters(get_parameters(initial_model))
 
     # Configure Strategy
@@ -174,7 +188,7 @@ def main() -> None:
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     if strategy.latest_parameters is not None:
         final_ndarrays = parameters_to_ndarrays(strategy.latest_parameters)
-        final_model = MedicalCNN()
+        final_model = build_federated_model()
         set_parameters(final_model, final_ndarrays)
         torch.save(final_model.state_dict(), FINAL_MODEL_PATH)
         print(f"[Server] Saved final global model to: {FINAL_MODEL_PATH}", flush=True)

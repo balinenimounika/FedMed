@@ -1,0 +1,27 @@
+{
+  "task": "week_6_local_hospital_3d_unet_check",
+  "device": "cpu",
+  "input_shape": [
+    1,
+    1,
+    16,
+    16,
+    16
+  ],
+  "mask_shape": [
+    1,
+    16,
+    16,
+    16
+  ],
+  "train_samples": 6,
+  "test_samples": 2,
+  "epochs": 2,
+  "train_loss": 0.00028409679847148556,
+  "train_voxel_accuracy": 0.7708740234375,
+  "test_loss": 0.0002685746003407985,
+  "test_voxel_accuracy": 0.819580078125,
+  "weight_l1_before": 2017.8035102188587,
+  "weight_l1_after": 2033.359280437231,
+  "weight_l1_change": 15.555770218372345
+}
