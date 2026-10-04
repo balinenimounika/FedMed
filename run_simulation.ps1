@@ -34,10 +34,12 @@ New-Item -ItemType Directory -Force -Path "$scriptDir\results" | Out-Null
 $serverLog = "$scriptDir\logs\server.log"
 $client0Log = "$scriptDir\logs\client_0.log"
 $client1Log = "$scriptDir\logs\client_1.log"
+$client2Log = "$scriptDir\logs\client_2.log"
 
 if (Test-Path $serverLog) { Remove-Item $serverLog -Force }
 if (Test-Path $client0Log) { Remove-Item $client0Log -Force }
 if (Test-Path $client1Log) { Remove-Item $client1Log -Force }
+if (Test-Path $client2Log) { Remove-Item $client2Log -Force }
 
 function Start-FedMedProcess {
     param(
@@ -106,10 +108,11 @@ if (-not $serverReady) {
 
 Write-Host "[Server] FedMed server is live and accepting gRPC connections!" -ForegroundColor Green
 
-# 3. Launch the two configured hospitals
-Write-Host "[3/4] Launching Client 0 and Client 1..." -ForegroundColor Cyan
+# 3. Launch the three configured hospitals
+Write-Host "[3/4] Launching Client 0, Client 1, and Client 2..." -ForegroundColor Cyan
 $client0Process = Start-FedMedProcess -FilePath $pythonExe -Arguments "-u src/client.py --client-id 0" -WorkingDirectory $scriptDir -LogFile $client0Log
 $client1Process = Start-FedMedProcess -FilePath $pythonExe -Arguments "-u src/client.py --client-id 1" -WorkingDirectory $scriptDir -LogFile $client1Log
+$client2Process = Start-FedMedProcess -FilePath $pythonExe -Arguments "-u src/client.py --client-id 2" -WorkingDirectory $scriptDir -LogFile $client2Log
 
 Write-Host "[4/4] Simulation running. Waiting for all processes to complete..." -ForegroundColor Cyan
 
@@ -117,6 +120,7 @@ Write-Host "[4/4] Simulation running. Waiting for all processes to complete..." 
 $serverProcess.WaitForExit()
 $client0Process.WaitForExit()
 $client1Process.WaitForExit()
+$client2Process.WaitForExit()
 
 Write-Host "`n==========================================================" -ForegroundColor Cyan
 Write-Host "   Simulation Completed. Inspecting Process Statuses:     " -ForegroundColor Cyan
@@ -124,9 +128,10 @@ Write-Host "==========================================================" -Foregro
 Write-Host "Server Exit Code  : $($serverProcess.ExitCode)" -ForegroundColor $(if ($serverProcess.ExitCode -eq 0) { "Green" } else { "Red" })
 Write-Host "Client 0 Exit Code: $($client0Process.ExitCode)" -ForegroundColor $(if ($client0Process.ExitCode -eq 0) { "Green" } else { "Red" })
 Write-Host "Client 1 Exit Code: $($client1Process.ExitCode)" -ForegroundColor $(if ($client1Process.ExitCode -eq 0) { "Green" } else { "Red" })
+Write-Host "Client 2 Exit Code: $($client2Process.ExitCode)" -ForegroundColor $(if ($client2Process.ExitCode -eq 0) { "Green" } else { "Red" })
 
-if ($serverProcess.ExitCode -eq 0 -and $client0Process.ExitCode -eq 0 -and $client1Process.ExitCode -eq 0) {
-    Write-Host "`n[SUCCESS] All federated learning rounds finished successfully across 2 clients!" -ForegroundColor Green
+if ($serverProcess.ExitCode -eq 0 -and $client0Process.ExitCode -eq 0 -and $client1Process.ExitCode -eq 0 -and $client2Process.ExitCode -eq 0) {
+    Write-Host "`n[SUCCESS] All federated learning rounds finished successfully across 3 clients!" -ForegroundColor Green
     if (Test-Path "$scriptDir\results\training_history.csv") {
         Write-Host "`n--- Training History (results/training_history.csv) ---" -ForegroundColor Yellow
         Get-Content "$scriptDir\results\training_history.csv"
@@ -140,5 +145,7 @@ if ($serverProcess.ExitCode -eq 0 -and $client0Process.ExitCode -eq 0 -and $clie
     if (Test-Path $client0Log) { Get-Content $client0Log }
     Write-Host "`n--- Client 1 Log ---"
     if (Test-Path $client1Log) { Get-Content $client1Log }
+    Write-Host "`n--- Client 2 Log ---"
+    if (Test-Path $client2Log) { Get-Content $client2Log }
     exit 1
 }
