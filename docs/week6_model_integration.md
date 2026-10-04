@@ -42,6 +42,23 @@ parameters are returned to Flower for federated aggregation. Re-run the script
 to regenerate the machine-readable result at
 `results/week6_local_training_results.json`.
 
+## Three-hospital Flower simulation
+
+The complete Flower simulation was verified with all three configured hospital
+clients. The server and every client exited with status `0`.
+
+| Round | Aggregated loss | Aggregated accuracy | Average client latency |
+| --- | ---: | ---: | ---: |
+| 1 | 0.00028605 | 80.44% | 2.788 s |
+| 2 | 0.00023888 | 92.97% | 0.200 s |
+| 3 | 0.00020252 | 97.93% | 0.190 s |
+
+Run the reproducible Windows command below from the project root:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\run_simulation.ps1 -PythonPath "C:\Users\kunda\AppData\Local\Programs\Python\Python311\python.exe"
+```
+
 ## Evidence screenshot
 
 Use the terminal output from the two commands above as the Week 6 evidence
