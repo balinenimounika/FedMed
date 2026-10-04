@@ -36,3 +36,12 @@ def test_fedmed_client_evaluation():
     assert loss == 0.0
     assert num_examples == 1
     assert metrics["accuracy"] == 0.0
+def test_three_hospital_configuration():
+    from src.config import NUM_CLIENTS, CLIENT_CLASS_DISTRIBUTIONS
+
+    assert NUM_CLIENTS == 3
+    assert set(CLIENT_CLASS_DISTRIBUTIONS.keys()) == {0, 1, 2}
+
+    for distribution in CLIENT_CLASS_DISTRIBUTIONS.values():
+        assert set(distribution.keys()) == {0, 1}
+        assert sum(distribution.values()) == 1.0
