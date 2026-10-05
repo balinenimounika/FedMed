@@ -13,7 +13,7 @@ RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
 
 # Network Configuration
-SERVER_ADDRESS: str = "127.0.0.1:8080"
+SERVER_ADDRESS: str = os.getenv("FEDMED_SERVER_ADDRESS", "127.0.0.1:8080")
 
 # Federated Learning Configuration
 NUM_CLIENTS: int = 3
