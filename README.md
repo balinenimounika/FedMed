@@ -502,7 +502,3 @@ OK
  Web Monitoring Console       Streamlit Dashboard (http://localhost:8501)
 ===================================================================================
 ```
-##6. License
-This project is licensed under the MIT License.
-
-Copyright (c) 2026 
