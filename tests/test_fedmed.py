@@ -36,6 +36,8 @@ def test_fedmed_client_evaluation():
     assert loss == 0.0
     assert num_examples == 1
     assert metrics["accuracy"] == 0.0
+
+
 def test_three_hospital_configuration():
     from src.config import NUM_CLIENTS, CLIENT_CLASS_DISTRIBUTIONS
 
@@ -45,3 +47,13 @@ def test_three_hospital_configuration():
     for distribution in CLIENT_CLASS_DISTRIBUTIONS.values():
         assert set(distribution.keys()) == {0, 1}
         assert sum(distribution.values()) == 1.0
+
+def test_server_address_from_environment(monkeypatch):
+    monkeypatch.setenv("FEDMED_SERVER_ADDRESS", "192.168.1.100:8080")
+
+    import importlib
+    import src.config as config
+
+    importlib.reload(config)
+
+    assert config.SERVER_ADDRESS == "192.168.1.100:8080"
