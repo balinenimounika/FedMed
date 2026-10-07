@@ -48,6 +48,7 @@ def test_three_hospital_configuration():
         assert set(distribution.keys()) == {0, 1}
         assert sum(distribution.values()) == 1.0
 
+
 def test_server_address_from_environment(monkeypatch):
     monkeypatch.setenv("FEDMED_SERVER_ADDRESS", "192.168.1.100:8080")
 
@@ -57,3 +58,14 @@ def test_server_address_from_environment(monkeypatch):
     importlib.reload(config)
 
     assert config.SERVER_ADDRESS == "192.168.1.100:8080"
+
+
+def test_server_address_default(monkeypatch):
+    monkeypatch.delenv("FEDMED_SERVER_ADDRESS", raising=False)
+
+    import importlib
+    import src.config as config
+
+    importlib.reload(config)
+
+    assert config.SERVER_ADDRESS == "127.0.0.1:8080"
