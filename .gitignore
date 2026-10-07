@@ -22,3 +22,12 @@ data/processed/*.npz
 Thumbs.db
 .vscode/
 .idea/
+
+# Cryptographic Keys & Local Credentials (Never commit private/secret keys)
+*.secret
+*.private
+*.key
+*.pem
+keys/
+secrets/
+

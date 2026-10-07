@@ -9,3 +9,6 @@ scipy>=1.11.0
 # Visualization and Progress Tracking
 matplotlib>=3.8.0
 tqdm>=4.66.0
+
+# Privacy-Preserving Machine Learning & Homomorphic Encryption
+tenseal>=0.3.14
