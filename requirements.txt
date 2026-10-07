@@ -1,4 +1,9 @@
 flwr
-torch
+torch>=2.0.0
 monai
-tenseal
+tenseal>=0.3.14
+nibabel>=5.1.0
+numpy>=1.26.0,<2.0.0
+scipy>=1.11.0
+matplotlib>=3.8.0
+tqdm>=4.66.0

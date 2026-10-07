@@ -1,5 +1,34 @@
 venv/
+env/
+ENV/
+.env
+
 __pycache__/
 *.pyc
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
 logs/
 results/
+
+# Large MRI volumes
+data/raw/BraTS*
+data/raw/imagesTr/
+data/raw/labelsTr/
+data/processed/*.npz
+
+# OS and Editor metadata
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Cryptographic Keys & Local Credentials
+*.secret
+*.private
+*.key
+*.pem
+keys/
+secrets/

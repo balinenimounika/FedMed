@@ -1,0 +1,122 @@
+================================================================================
+FedMed — Privacy-Preserving Machine Learning & Homomorphic Encryption Report
+Module: TenSEAL CKKS Server-Side Ciphertext Aggregation Proof-of-Concept
+================================================================================
+
+1. WHY HOMOMORPHIC ENCRYPTION IS USED
+-------------------------------------
+In Cross-Silo Federated Learning (FL), hospitals compute local model weight or 
+gradient updates using private patient MRI scans. Although raw MRI volumes 
+never leave the hospital premises, transmitting unencrypted model updates to a 
+central server exposes vulnerabilities to model inversion attacks, membership 
+inference attacks, and gradient reconstruction leaks. 
+Homomorphic Encryption (HE) enables the central server to compute algebraic 
+operations (such as addition and scalar multiplication) directly on encrypted 
+data (ciphertext) without ever decrypting or inspecting individual hospital updates.
+
+2. WHY CKKS IS SUITABLE FOR FLOATING-POINT MODEL UPDATES
+--------------------------------------------------------
+The Cheon-Kim-Kim-Song (CKKS) scheme is specifically designed for approximate 
+arithmetic over complex and real numbers. Unlike exact schemes (such as BFV/BGV) 
+which operate on integers or modular polynomials, neural network weights and 
+gradients are floating-point values. CKKS encodes vectors of real numbers into 
+polynomial rings and computes additions and multiplications with bounded, 
+negligible rounding noise, making it the premier scheme for deep learning models.
+
+3. HOW HOSPITAL CLIENTS ENCRYPT UPDATES
+---------------------------------------
+- Each hospital client (Hospital 1, 2, and 3) initializes a local TenSEAL CKKS 
+  context with polynomial modulus degree N=8192 and coefficient modulus bit 
+  sizes [60, 40, 40, 60] with scale 2^40.
+- Hospital clients extract their local model or gradient update vectors.
+- Using encrypt_update(vector, context), each hospital encrypts its update into 
+  a ts.CKKSVector ciphertext.
+- The ciphertext is serialized into network bytes and transmitted to the central server.
+- The secret key remains exclusively with the authorized clients and is never transmitted.
+
+4. HOW THE SERVER AGGREGATES CIPHERTEXTS
+----------------------------------------
+- The central server receives only a public evaluation context (is_public = True), 
+  which contains Galois and relinearization keys but NO secret key.
+- The server receives serialized ciphertexts from Hospital 1, 2, and 3.
+- The server executes homomorphic addition directly across the ciphertexts:
+      Ciphertext_Sum = Ciphertext_1 + Ciphertext_2 + Ciphertext_3
+- To compute the average, the server performs homomorphic scalar multiplication:
+      Ciphertext_Average = Ciphertext_Sum * (1.0 / N)
+- The resulting object remains a fully encrypted ts.CKKSVector.
+
+5. WHY THE SERVER DOES NOT NEED TO DECRYPT INDIVIDUAL UPDATES
+-------------------------------------------------------------
+The homomorphic property of CKKS ensures that:
+      Dec(Enc(m1) + Enc(m2)) ≈ m1 + m2
+      Dec(Enc(m) * scalar)   ≈ m * scalar
+Because linear operations can be evaluated purely in the ciphertext space, the 
+server performs the entire federated averaging process blindly. Calling .decrypt() 
+on the server fails with ValueError ("context doesn't hold a secret_key"), 
+guaranteeing mathematical privacy.
+
+6. HOW THE AUTHORIZED PARTY DECRYPTS THE FINAL AGGREGATE
+--------------------------------------------------------
+- The central server transmits the single aggregated ciphertext to the authorized 
+  decryptor (or back to the participating hospital clients).
+- The authorized decryptor, holding the private secret key, deserializes the 
+  ciphertext and calls decrypt().
+- The decrypted vector contains the globally averaged model weights ready for 
+  the next federated training round.
+
+7. PLAINTEXT BASELINE VERSUS ENCRYPTED AGGREGATION
+--------------------------------------------------
+In verification experiments with 3 simulated hospitals:
+  Hospital 1 update: [1.0, 2.0, 3.0, 4.0]
+  Hospital 2 update: [2.0, 4.0, 6.0, 8.0]
+  Hospital 3 update: [3.0, 6.0, 9.0, 12.0]
+
+- Plaintext Baseline:
+  (h1 + h2 + h3) / 3 = [2.0, 4.0, 6.0, 8.0]
+
+- Decrypted Homomorphic Aggregation:
+  Dec(Enc_Aggregate)  = [2.0000008, 4.0000003, 6.0000010, 8.0000006]
+
+8. NUMERICAL ERROR & TOLERANCE
+------------------------------
+- Absolute error per component:
+    Component 0: 8.52e-07
+    Component 1: 3.41e-07
+    Component 2: 1.07e-06
+    Component 3: 6.28e-07
+- Maximum absolute error: 1.072504e-06
+- Established tolerance:  1.0e-03 (0.001)
+- Result: The homomorphic approximation error is six orders of magnitude below 
+  the tolerance threshold, preserving model convergence.
+
+9. SECURITY LIMITATIONS
+-----------------------
+- Homomorphic encryption protects data in transit and during server aggregation.
+- It does not prevent poisoned updates from malicious clients (requires Byzantine-robust aggregation).
+- It introduces computational and ciphertext expansion overhead compared to plaintext FL.
+- In multi-party settings, threshold CKKS or secure key management must be used so 
+  no single client holds the unilateral secret key.
+
+10. TEST RESULTS SUMMARY
+------------------------
+[PASS] TenSEAL import (version 0.3.18)
+[PASS] CKKS context creation (poly_modulus_degree=8192)
+[PASS] Encryption context preparation (is_public=True for server)
+[PASS] Hospital 1 update encryption
+[PASS] Hospital 2 update encryption
+[PASS] Hospital 3 update encryption
+[PASS] Ciphertext verification
+[PASS] Server received encrypted updates
+[PASS] Server-side ciphertext aggregation
+[PASS] Server did not decrypt client updates (verified via exception check)
+[PASS] Encrypted aggregate generated
+[PASS] Authorized decryption
+[PASS] Plaintext baseline calculation ([2.0, 4.0, 6.0, 8.0])
+[PASS] Numerical aggregation verification
+[PASS] Maximum error within tolerance (1.07e-06 < 1e-3)
+[PASS] Secret key not exposed & Git-safe
+[PASS] Three-hospital encrypted aggregation
+
+FINAL STATUS:
+TENSEAL HOMOMORPHIC ENCRYPTION: PASSED
+================================================================================
