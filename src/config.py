@@ -43,3 +43,20 @@ CLIENT_CLASS_DISTRIBUTIONS = {
 # Output Files
 FINAL_MODEL_PATH = RESULTS_DIR / "final_model.pt"
 TRAINING_HISTORY_PATH = RESULTS_DIR / "training_history.csv"
+
+# Week 6: 3D MRI segmentation integration
+# Compact configuration for hospital-side CPU smoke testing
+# with a compatible MONAI U-Net topology.
+MRI_VOLUME_DIMS: tuple = (16, 16, 16)  # (Depth, Height, Width)
+MRI_IN_CHANNELS: int = 1
+MRI_OUT_CHANNELS: int = 2  # background, lesion
+MRI_UNET_CHANNELS: tuple = (4, 8, 16, 32)
+MRI_UNET_STRIDES: tuple = (2, 2, 2)
+MRI_DATASET_SIZE_PER_CLIENT: int = 8
+MRI_BATCH_SIZE: int = 1
+MRI_TRAINING_RESULTS_PATH = RESULTS_DIR / "week6_local_training_results.json"
+
+# Live metric stream exposed by the central aggregator.
+# Only aggregate round metrics are published.
+METRICS_WEBSOCKET_HOST: str = "127.0.0.1"
+METRICS_WEBSOCKET_PORT: int = 8765
