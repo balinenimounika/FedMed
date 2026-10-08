@@ -56,3 +56,8 @@ MRI_UNET_STRIDES: tuple = (2, 2, 2)
 MRI_DATASET_SIZE_PER_CLIENT: int = 8
 MRI_BATCH_SIZE: int = 1
 MRI_TRAINING_RESULTS_PATH = RESULTS_DIR / "week6_local_training_results.json"
+
+# Live metric stream exposed by the central aggregator. The endpoint publishes
+# aggregate round metrics only; no patient data or model parameters are sent.
+METRICS_WEBSOCKET_HOST: str = "127.0.0.1"
+METRICS_WEBSOCKET_PORT: int = 8765

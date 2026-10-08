@@ -21,9 +21,12 @@ from src.config import (
     RESULTS_DIR,
     SERVER_ADDRESS,
     TRAINING_HISTORY_PATH,
+    METRICS_WEBSOCKET_HOST,
+    METRICS_WEBSOCKET_PORT,
 )
 from src.config import MRI_IN_CHANNELS, MRI_OUT_CHANNELS, MRI_UNET_CHANNELS, MRI_UNET_STRIDES
 from src.fedmed.models import UNet3DConfig, build_unet3d
+from src.live_metrics import LiveMetricsPublisher
 from src.model import get_parameters, set_parameters
 
 
@@ -57,11 +60,12 @@ def evaluate_metrics_aggregation_fn(
 class FedMedStrategy(fl.server.strategy.FedAvg):
     """Custom FedAvg strategy tracking parameters, latencies, and saving history."""
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args, metrics_publisher: LiveMetricsPublisher | None = None, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.latest_parameters: Optional[Parameters] = None
         self.history: List[Dict[str, Union[int, float]]] = []
         self.round_latencies: Dict[int, float] = {}
+        self.metrics_publisher = metrics_publisher
 
     def aggregate_fit(
         self,
@@ -103,6 +107,8 @@ class FedMedStrategy(fl.server.strategy.FedAvg):
             "latency_sec": round(avg_lat, 3),
         }
         self.history.append(record)
+        if self.metrics_publisher is not None:
+            self.metrics_publisher.publish_round(server_round, loss_val, float(acc), avg_lat)
 
         lat_str = f" | Avg Client Latency: {avg_lat:.2f}s" if avg_lat > 0 else ""
         print(
@@ -138,6 +144,23 @@ def main() -> None:
         help=f"Server host and port (default: {SERVER_ADDRESS})",
     )
     parser.add_argument(
+        "--metrics-host",
+        type=str,
+        default=METRICS_WEBSOCKET_HOST,
+        help=f"WebSocket host for live aggregate metrics (default: {METRICS_WEBSOCKET_HOST})",
+    )
+    parser.add_argument(
+        "--metrics-port",
+        type=int,
+        default=METRICS_WEBSOCKET_PORT,
+        help=f"WebSocket port for live aggregate metrics (default: {METRICS_WEBSOCKET_PORT})",
+    )
+    parser.add_argument(
+        "--disable-live-metrics",
+        action="store_true",
+        help="Disable the WebSocket metric stream.",
+    )
+    parser.add_argument(
         "--num-rounds",
         type=int,
         default=NUM_ROUNDS,
@@ -150,11 +173,24 @@ def main() -> None:
     print(f"  Address: {args.server_address}", flush=True)
     print(f"  Rounds: {args.num_rounds}", flush=True)
     print(f"  Minimum Clients: {NUM_CLIENTS}", flush=True)
+    print(
+        f"  Live Metrics: {'disabled' if args.disable_live_metrics else f'ws://{args.metrics_host}:{args.metrics_port}'}",
+        flush=True,
+    )
     print("==================================================", flush=True)
 
     # Initialize global model
     initial_model = build_federated_model()
     initial_parameters = ndarrays_to_parameters(get_parameters(initial_model))
+
+    metrics_publisher = None
+    if not args.disable_live_metrics:
+        metrics_publisher = LiveMetricsPublisher(args.metrics_host, args.metrics_port)
+        if metrics_publisher.start():
+            print(f"[Server] Live metrics WebSocket listening on {metrics_publisher.url}", flush=True)
+        else:
+            print("[Server] Live metrics unavailable; continuing without WebSocket stream.", flush=True)
+            metrics_publisher = None
 
     # Configure Strategy
     strategy = FedMedStrategy(
@@ -167,6 +203,7 @@ def main() -> None:
         on_fit_config_fn=fit_config_fn,
         on_evaluate_config_fn=eval_config_fn,
         initial_parameters=initial_parameters,
+        metrics_publisher=metrics_publisher,
     )
 
     # Start Flower Server
@@ -179,6 +216,9 @@ def main() -> None:
     except Exception as e:
         print(f"[Server] Error during federated session: {e}", file=sys.stderr, flush=True)
         sys.exit(1)
+    finally:
+        if metrics_publisher is not None:
+            metrics_publisher.stop()
 
     print("\n==================================================", flush=True)
     print("  Federated Training Finished. Saving Artifacts...", flush=True)
