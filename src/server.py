@@ -303,12 +303,12 @@ def main() -> None:
 
     mode_label = "ENCRYPTED (TenSEAL CKKS)" if args.encrypted else "STANDARD (Plaintext)"
     print("==================================================", flush=True)
-    print(f"  FedMed Federated Learning Server Initializing [{mode_label}]", flush=True)
-    print(f"  Address: {args.server_address}", flush=True)
-    print(f"  Rounds: {args.num_rounds}", flush=True)
-    print(f"  Minimum Clients: {NUM_CLIENTS}", flush=True)
+    print(f"   FedMed Federated Learning Server Initializing [{mode_label}]", flush=True)
+    print(f"   Address: {args.server_address}", flush=True)
+    print(f"   Rounds: {args.num_rounds}", flush=True)
+    print(f"   Minimum Clients: {NUM_CLIENTS}", flush=True)
     print(
-        f"  Live Metrics: {'disabled' if args.disable_live_metrics else f'ws://{args.metrics_host}:{args.metrics_port}'}",
+        f"   Live Metrics: {'disabled' if args.disable_live_metrics else f'ws://{args.metrics_host}:{args.metrics_port}'}",
         flush=True,
     )
     print("==================================================", flush=True)
@@ -317,18 +317,50 @@ def main() -> None:
     initial_model = build_federated_model()
     initial_parameters = ndarrays_to_parameters(get_parameters(initial_model))
 
+    # Initialize live metrics publisher if enabled
+    metrics_publisher = None
+    if not args.disable_live_metrics:
+        try:
+            metrics_publisher = LiveMetricsPublisher(
+                host=args.metrics_host,
+                port=args.metrics_port,
+            )
+            metrics_publisher.start()
+        except Exception as e:
+            print(f"[Server] Warning: Could not start LiveMetricsPublisher: {e}", flush=True)
+
     # Configure Strategy
-    strategy = FedMedStrategy(
-        fraction_fit=1.0,
-        fraction_evaluate=1.0,
-        min_fit_clients=NUM_CLIENTS,
-        min_evaluate_clients=NUM_CLIENTS,
-        min_available_clients=NUM_CLIENTS,
-        evaluate_metrics_aggregation_fn=evaluate_metrics_aggregation_fn,
-        on_fit_config_fn=fit_config_fn,
-        on_evaluate_config_fn=eval_config_fn,
-        initial_parameters=initial_parameters,
-    )
+    if args.encrypted:
+        ctx_path = Path(args.context_path) if args.context_path else Path("keys/ckks_public.seal")
+        if not ctx_path.is_file():
+            print(f"[Server] Error: Public CKKS context not found at {ctx_path}. Run verify_encryption.py first.", file=sys.stderr)
+            sys.exit(1)
+        public_context = load_context_from_file(ctx_path)
+        strategy = FedMedCKKSStrategy(
+            public_context=public_context,
+            fraction_fit=1.0,
+            fraction_evaluate=1.0,
+            min_fit_clients=NUM_CLIENTS,
+            min_evaluate_clients=NUM_CLIENTS,
+            min_available_clients=NUM_CLIENTS,
+            evaluate_metrics_aggregation_fn=evaluate_metrics_aggregation_fn,
+            on_fit_config_fn=fit_config_fn,
+            on_evaluate_config_fn=eval_config_fn,
+            initial_parameters=initial_parameters,
+        )
+    else:
+        strategy = FedMedStrategy(
+            fraction_fit=1.0,
+            fraction_evaluate=1.0,
+            min_fit_clients=NUM_CLIENTS,
+            min_evaluate_clients=NUM_CLIENTS,
+            min_available_clients=NUM_CLIENTS,
+            evaluate_metrics_aggregation_fn=evaluate_metrics_aggregation_fn,
+            on_fit_config_fn=fit_config_fn,
+            on_evaluate_config_fn=eval_config_fn,
+            initial_parameters=initial_parameters,
+            metrics_publisher=metrics_publisher,
+        )
 
     # Start Flower Server
     try:
@@ -345,22 +377,22 @@ def main() -> None:
             metrics_publisher.stop()
 
     print("\n==================================================", flush=True)
-    print("  Federated Training Finished. Saving Artifacts...", flush=True)
+    print("   Federated Training Finished. Saving Artifacts...", flush=True)
     print("==================================================", flush=True)
 
     # 1. Save final global model
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     if args.encrypted:
-        if strategy.latest_encrypted_parameters is not None:
+        if hasattr(strategy, "latest_encrypted_parameters") and strategy.latest_encrypted_parameters is not None:
             enc_model_path = RESULTS_DIR / "final_model_encrypted.seal"
             # Save raw encrypted chunks
             import pickle
             with open(enc_model_path, "wb") as f:
                 pickle.dump(strategy.latest_encrypted_parameters.tensors, f)
             print(f"[Server] Saved final global encrypted model to: {enc_model_path}", flush=True)
-            print("         Notice: Decryption strictly reserved for client institutions holding secret key.", flush=True)
+            print("        Notice: Decryption strictly reserved for client institutions holding secret key.", flush=True)
     else:
-        if strategy.latest_parameters is not None:
+        if hasattr(strategy, "latest_parameters") and strategy.latest_parameters is not None:
             final_ndarrays = parameters_to_ndarrays(strategy.latest_parameters)
             final_model = build_federated_model()
             set_parameters(final_model, final_ndarrays)
@@ -370,28 +402,27 @@ def main() -> None:
             torch.save(initial_model.state_dict(), FINAL_MODEL_PATH)
             print(f"[Server] Saved initial model to: {FINAL_MODEL_PATH}", flush=True)
 
-    # 2. Save training history CSV
-    fieldnames = ["round", "loss", "accuracy", "latency_sec"]
-    with open(TRAINING_HISTORY_PATH, mode="w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        writer.writeheader()
+    # 2. Save training history to CSV
+    if hasattr(strategy, "history") and strategy.history:   
+        with open(TRAINING_HISTORY_PATH, mode="w", newline="") as csv_file:
+            fieldnames = ["round", "loss", "accuracy", "latency_sec"]
+            writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+            writer.writeheader()
+            for record in strategy.history:
+                writer.writerow(record)
+        print(f"[Server] Saved training history to: {TRAINING_HISTORY_PATH}", flush=True)
+
+        # Print summary table
+        print("\n--- FedMed Round Summary ---", flush=True)
+        print(f"{'Round':<8}{'Aggregated Loss':<18}{'Aggregated Accuracy':<22}{'Avg Latency':<14}", flush=True)
+        print("-" * 62, flush=True)
         for row in strategy.history:
-            writer.writerow(row)
-    print(f"[Server] Saved training history to: {TRAINING_HISTORY_PATH}", flush=True)
-
-    # Print summary table
-    print("\n--- FedMed Round Summary ---", flush=True)
-    print(f"{'Round':<8}{'Aggregated Loss':<18}{'Aggregated Accuracy':<22}{'Avg Latency':<14}", flush=True)
-    print("-" * 62, flush=True)
-    for row in strategy.history:
-        lat = f"{row.get('latency_sec', 0.0):.2f}s"
-        print(
-            f"{row['round']:<8}{row['loss']:<18.5f}{row['accuracy'] * 100:>17.2f}%   {lat:<14}",
-            flush=True,
-        )
-    print("-" * 62, flush=True)
-    print("-" * 62, flush=True)
-
+            lat = f"{row.get('latency_sec', 0.0):.2f}s"
+            print(
+                f"{row['round']:<8}{row['loss']:<18.5f}{row['accuracy'] * 100:>17.2f}%   {lat:<14}",
+                flush=True,
+            )
+        print("-" * 62, flush=True)
 
 if __name__ == "__main__":
     main()
