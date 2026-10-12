@@ -471,13 +471,13 @@ OK
 =================================================================
   ALL UNIT TESTS PASSED (4/4 tests successful).
 =================================================================
-```
+
 
 ---
 
 ## 5. Technical Specifications Reference Matrix
 
-```
+
 ===================================================================================
  FEDMED TECHNICAL SPECIFICATIONS SUMMARY
 ===================================================================================
@@ -501,4 +501,4 @@ OK
  Process Automation           Dual Orchestration: run_simulation.ps1 & run_simulation.sh
  Web Monitoring Console       Streamlit Dashboard (http://localhost:8501)
 
-```
+
