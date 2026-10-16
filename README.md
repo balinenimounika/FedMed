@@ -26,7 +26,7 @@ The system employs a client-server star topology:
 
 ---
 
-## 2. Week 5 – Server and Client Setup
+## 2. Server and Client Setup
 
 The Week 5 milestone established the foundational client-server federated learning infrastructure, implementing reliable network transport, local training loops, a convolutional neural network, and model checkpointing.
 
@@ -65,7 +65,7 @@ The server uses a custom strategy (`FedMedStrategy` / `SaveModelFedAvg`) subclas
 
 ---
 
-## 3. Week 6 – Multi-Node Simulation
+## 3.Multi-Node Simulation
 
 The Week 6 milestone scaled the platform into an automated multi-hospital simulation featuring non-IID data partitions, weighted aggregation mathematics, and cross-platform automation scripts.
 
