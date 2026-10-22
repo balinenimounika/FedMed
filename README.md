@@ -5,7 +5,7 @@
 **Framework Stack:** Python 3.12 | Flower (`flwr==1.8.0`) | PyTorch (`torch>=2.0.0`) | Streamlit (`streamlit>=1.28.0`)  
 **Network Protocol:** gRPC over HTTP/2 | Dual-Platform Automation (PowerShell / POSIX Bash)
 
----
+
 
 ## 1. Project Overview
 
@@ -24,7 +24,7 @@ The system employs a client-server star topology:
 - **Secure Transport Layer**: Model parameters and configuration payloads are serialized and exchanged via gRPC over HTTP/2 with custom payload limits.
 - **Monitoring Console (`dashboard.py`)**: An interactive Streamlit dashboard providing real-time convergence tracking, institutional audits, and log inspection.
 
----
+
 
 ## 2. Server and Client Setup
 
@@ -63,7 +63,7 @@ The server uses a custom strategy (`FedMedStrategy` / `SaveModelFedAvg`) subclas
 - **Global Checkpoint**: Serialized PyTorch state dictionary saved to `results/final_model.pt` (415 KB).
 - **Training History Ledger**: Round-by-round statistics saved to `results/training_history.csv`.
 
----
+
 
 ## 3.Multi-Node Simulation
 
@@ -134,7 +134,7 @@ python src/client.py --client-id 1 --server-address "127.0.0.1:8080"
 python src/client.py --client-id 2 --server-address "127.0.0.1:8080"
 ```
 
----
+
 
 ## 4. Results and Verification
 
@@ -167,7 +167,7 @@ All 4 unit tests passed successfully in 2.82 seconds. Environment compatibility 
 ### 4.4 Synthetic Benchmark Clarification
 The 100.0% validation accuracy and rapid loss convergence reflect the structured nature of the synthetic benchmark dataset. The synthetic morphologies (Gaussian cores vs. annular rings) were specifically engineered with clear geometric separability to formally verify gRPC transport, tensor serialization, and FedAvg mathematics without confounding data quality issues. **This result does not indicate clinical diagnostic readiness on real-world medical imaging**, where noise, subtle margins, and anatomical variability create significantly more complex optimization landscapes.
 
----
+
 
 ## 5. Dashboard
 
@@ -184,7 +184,7 @@ streamlit run dashboard.py --server.port 8501
 - **Model Checkpoint Status**: Displays checkpoint file details (`results/final_model.pt`, 415 KB) and layer structure.
 - **Live Execution Log Viewer**: Provides a tabbed interface to inspect runtime logs for the central coordinator and each hospital client node.
 
----
+
 
 ## 6. Technology Stack and Project Structure
 
@@ -218,7 +218,7 @@ streamlit run dashboard.py --server.port 8501
 | `results/final_model.pt` | Serialized global PyTorch model state dictionary (415 KB) |
 | `results/training_history.csv` | Convergence history ledger recording round metrics and latencies |
 
----
+
 
 ## 7. Limitations and Future Scope
 
